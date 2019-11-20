@@ -1,22 +1,21 @@
-import { FindNeighbours } from '../../core/interfaces/find-neighbours.interface';
-import { IHeuristic } from '../../core/interfaces/heuristic.interface';
-import { Manhattan } from '../../core/models/heuristic/manhattan.model';
-import { INode } from '../../core/interfaces/node.interface';
-import { IPoint } from '../../core/interfaces/point.interface';
-import { Diagonal } from '../../core/models/heuristic/diagonal.model';
-import { Euclidean } from '../../core/models/heuristic/euclidean.model';
-import { GridMap } from './new.component';
+import { INode } from '../interfaces/node.interface';
+import { FindNeighbours } from '../interfaces/find-neighbours.interface';
+import { Diagonal } from './heuristic/diagonal.model';
+import { IHeuristic } from '../interfaces/heuristic.interface';
+import { Euclidean } from './heuristic/euclidean.model';
+import { Manhattan } from './heuristic/manhattan.model';
+import { IPoint } from '../interfaces/point.interface';
+import { GridMap } from './GridMap';
 
 export class AStar {
   private $gridMap: GridMap;
   private $findNeighbours: FindNeighbours;
   private $heuristic: IHeuristic;
-  private $squeezing = false;
-  pathStart = [];
-  pathEnd = [];
+  private $squeezing: boolean;
 
-  public constructor(gridMap: GridMap) {
+  public constructor(gridMap: GridMap, squeezing: boolean = false) {
     this.$gridMap = gridMap;
+    this.$squeezing = squeezing;
     if (!this.$heuristic) {
       this.setHeuristic(new Manhattan());
     }
@@ -26,17 +25,13 @@ export class AStar {
     this.$heuristic = heuristic;
   }
 
-  public search($startPosition, $endPosition) {
-    return;
-  }
-
-  private findPath(): Array<INode> {
+  public findPath(): Array<INode> {
     // actually calculate the a-star path!
     // this returns an array of coordinates
     // that is empty if no path is possible
     // create Nodes from the Start and End x,y coordinates
-    const myPathStart = this.Node(null, {x: this.pathStart[0], y: this.pathStart[1]});
-    const myPathEnd = this.Node(null, {x: this.pathEnd[0], y: this.pathEnd[1]});
+    const myPathStart = this.Node(null, {x: this.$gridMap.$pathStart[0], y: this.$gridMap.$pathStart[1]});
+    const myPathEnd = this.Node(null, {x: this.$gridMap.$pathEnd[0], y: this.$gridMap.$pathEnd[1]});
     // create an array that will contain all world cells
     // tslint:disable-next-line:no-shadowed-variable
     let AStar = new Array(this.$gridMap.mapSize);
@@ -86,21 +81,15 @@ export class AStar {
         result.reverse();
       } else {
         // not the destination - find which nearby nodes are walkable
-        myNeighbours = this.Neighbours(myNode.x, myNode.y);
+        myNeighbours = this.getNeighbours(myNode.x, myNode.y);
         // test each one that hasn't been tried already
         for (i = 0, j = myNeighbours.length; i < j; i++) {
           myPath = this.Node(myNode, myNeighbours[i]);
           if (!AStar[myPath.value]) {
             // estimated cost of this particular route so far
-            // OLD
-            // myPath.g = myNode.g + this.distanceFunction(myNeighbours[i], myNode);
             myPath.g = myNode.g + this.$heuristic.compare(myNeighbours[i], myNode);
-            // NEW
             // estimated cost of entire guessed route to the destination
-            // OLD
-            // myPath.f = myPath.g + this.distanceFunction(myNeighbours[i], myPathEnd);
             myPath.f = myPath.g + this.$heuristic.compare(myNeighbours[i], myPathEnd);
-            // NEW
             // remember this new path for testing above
             Open.push(myPath);
             // mark this node in the world graph as visited
@@ -140,7 +129,7 @@ export class AStar {
    * Returns every available North, South, East or West cell that is empty.
    * No diagonals, unless distanceFunction function is not Manhattan
    */
-  private Neighbours(x, y): Array<IPoint> {
+  private getNeighbours(x, y): Array<IPoint> {
     const N = y - 1;
     const S = y + 1;
     const E = x + 1;

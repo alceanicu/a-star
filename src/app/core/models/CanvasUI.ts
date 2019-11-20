@@ -1,300 +1,144 @@
-import { INode } from '../interfaces/node.interface';
-import { FindNeighbours } from '../interfaces/find-neighbours.interface';
-import { Diagonal } from './heuristic/diagonal.model';
-import { IHeuristic } from '../interfaces/heuristic.interface';
-import { Euclidean } from './heuristic/euclidean.model';
-import { Manhattan } from './heuristic/manhattan.model';
-import { IPoint } from '../interfaces/point.interface';
 import { GridMap } from './GridMap';
+import { ElementRef } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 
-export class AStar {
-  private $gridMap: GridMap;
-  private $findNeighbours: FindNeighbours;
-  private $heuristic: IHeuristic;
-  private $squeezing: boolean;
+export class CanvasUI {
+  private map: GridMap;
+  private canvasEl: ElementRef;
+  private readonly form?: FormGroup;
+  private readonly canvas?: HTMLCanvasElement;
+  private context?: CanvasRenderingContext2D;
 
-  public constructor(gridMap: GridMap, squeezing: boolean = false) {
-    this.$gridMap = gridMap;
-    this.$squeezing = squeezing;
-    if (!this.$heuristic) {
-      this.setHeuristic(new Manhattan());
+  public constructor(map: GridMap, canvasEl: ElementRef, form: FormGroup = null) {
+    this.map = map;
+    this.canvasEl = canvasEl;
+    this.form = form;
+    this.canvas = this.canvasEl.nativeElement as HTMLCanvasElement;
+    this.init();
+  }
+
+  public drawEmptyGrid(map: GridMap = null): void {
+    console.log('drawEmptyGrid...');
+
+    if (map !== null) {
+      this.map = map;
+      this.canvas.width = this.map.mapWidth * this.map.cellWidth;
+      this.canvas.height = this.map.mapHeight * this.map.cellHeight;
+    }
+
+    // clear the screen
+    this.context.fillStyle = '#000';
+    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    for (let x = 0; x < this.map.mapWidth; x++) {
+      for (let y = 0; y < this.map.mapHeight; y++) {
+        this.context.fillStyle = (this.map.map[x][y] === 1) ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+        this.context.fillRect(
+          x * this.map.cellWidth,
+          y * this.map.cellHeight,
+          this.map.cellWidth - 1,
+          this.map.cellHeight - 1
+        );
+      }
     }
   }
 
-  public setHeuristic(heuristic: IHeuristic): void {
-    this.$heuristic = heuristic;
+  public drawStartPoint(): void {
+    this.context.font = 'bold 10px Arial';
+    this.context.textAlign = 'center';
+    this.context.fillStyle = '#F00';
+    this.context.fillText(
+      'START',
+      (this.map.$pathStart[0] * this.map.cellWidth) + (this.map.cellWidth / 2),
+      this.map.$pathStart[1] * this.map.cellHeight + ((this.map.cellHeight / 2) + (10 / 2))
+    );
   }
 
-  // public search() {
-  //   this.$gridMap.$currentPath = this.findPath();
-  // }
+  public drawEndPoint(): void {
+    this.context.font = 'bold 10px Arial';
+    this.context.fillStyle = '#000';
+    this.context.fillText(
+      'END',
+      (this.map.$pathEnd[0] * this.map.cellWidth) + (this.map.cellWidth / 2),
+      this.map.$pathEnd[1] * this.map.cellHeight + ((this.map.cellHeight / 2) + (10 / 2))
+    );
+  }
 
-  public findPath(): Array<INode> {
-    // actually calculate the a-star path!
-    // this returns an array of coordinates
-    // that is empty if no path is possible
-    // create Nodes from the Start and End x,y coordinates
-    const myPathStart = this.Node(null, {x: this.$gridMap.$pathStart[0], y: this.$gridMap.$pathStart[1]});
-    const myPathEnd = this.Node(null, {x: this.$gridMap.$pathEnd[0], y: this.$gridMap.$pathEnd[1]});
-    // create an array that will contain all world cells
-    // tslint:disable-next-line:no-shadowed-variable
-    let AStar = new Array(this.$gridMap.mapSize);
-    // list of currently open Nodes
-    let Open = [myPathStart];
-    // list of closed Nodes
-    let Closed = [];
-    // list of the final output array
-    const result = [];
-    // reference to a Node (that is nearby)
-    let myNeighbours;
-    // reference to a Node (that we are considering now)
-    let myNode;
-    // reference to a Node (that starts a path in question)
-    let myPath;
-    // temp integer variables used in the calculations
-    let length;
-    let max;
-    let min;
-    let i;
-    let j;
-    // iterate through the open list until none are left
-    // tslint:disable-next-line:no-conditional-assignment
-    while (length = Open.length) {
-      max = this.$gridMap.mapSize;
-      min = -1;
-      for (i = 0; i < length; i++) {
-        if (Open[i].f < max) {
-          max = Open[i].f;
-          min = i;
-        }
+  public drawCurrentPath(): void {
+    for (let point = 0; point < this.map.currentPath.length; point++) {
+      switch (point) {
+        case 0: // START Point
+          this.drawStartPoint();
+          break;
+        case this.map.currentPath.length - 1: // END Point
+          this.drawEndPoint();
+          break;
+        default: // PATH NODE
+          this.context.beginPath();
+          this.context.arc(
+            (this.map.currentPath[point][0] * this.map.cellWidth) + (this.map.cellWidth / 2),
+            (this.map.currentPath[point][1] * this.map.cellHeight) + ((this.map.cellHeight / 2)),
+            5, 0, 2 * Math.PI, false);
+          this.context.fillStyle = '#F00';
+          this.context.fill();
+          break;
       }
-      // grab the next node and remove it from Open array
-      myNode = Open.splice(min, 1)[0];
+    }
+  }
 
-      // is it the destination node?
-      if (myNode.value === myPathEnd.value) {
-        myPath = Closed[Closed.push(myNode) - 1];
-        do {
-          result.push([myPath.x, myPath.y]);
-        }
-          // tslint:disable-next-line:no-conditional-assignment
-        while (myPath = myPath.Parent);
-        // clear the working arrays
-        AStar = Closed = Open = [];
-        // we want to return start to finish
-        result.reverse();
+  private init(): void {
+    this.canvas.width = this.map.mapWidth * this.map.cellWidth;
+    this.canvas.height = this.map.mapHeight * this.map.cellHeight;
+    this.canvas.addEventListener('click', (e) => {
+      let x;
+      let y;
+      // grab html page coords
+      if (e.pageX !== undefined && e.pageY !== undefined) {
+        x = e.pageX;
+        y = e.pageY;
       } else {
-        // not the destination - find which nearby nodes are walkable
-        myNeighbours = this.Neighbours(myNode.x, myNode.y);
-        // test each one that hasn't been tried already
-        for (i = 0, j = myNeighbours.length; i < j; i++) {
-          myPath = this.Node(myNode, myNeighbours[i]);
-          if (!AStar[myPath.value]) {
-            // estimated cost of this particular route so far
-            // OLD
-            // myPath.g = myNode.g + this.distanceFunction(myNeighbours[i], myNode);
-            myPath.g = myNode.g + this.$heuristic.compare(myNeighbours[i], myNode);
-            // NEW
-            // estimated cost of entire guessed route to the destination
-            // OLD
-            // myPath.f = myPath.g + this.distanceFunction(myNeighbours[i], myPathEnd);
-            myPath.f = myPath.g + this.$heuristic.compare(myNeighbours[i], myPathEnd);
-            // NEW
-            // remember this new path for testing above
-            Open.push(myPath);
-            // mark this node in the world graph as visited
-            AStar[myPath.value] = true;
+        x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+      }
+
+      // make them relative to the canvas only
+      x -= this.canvas.offsetLeft;
+      y -= this.canvas.offsetTop;
+
+      // return cell [x, y] that we clicked
+      const cell = [Math.floor(x / this.map.cellWidth), Math.floor(y / this.map.cellHeight)];
+
+      // now we know while tile we clicked
+      console.log(`We clicked ON [x=${cell[0]} y=${cell[1]}]`);
+      if (this.form !== null) {
+        try {
+          if (this.map.$pathStart.length === 0) {
+            this.map.setStartPoint(cell);
+            this.form.controls.startX.setValue(cell[0]);
+            this.form.controls.startY.setValue(cell[1]);
+            this.drawStartPoint();
+          } else if (this.map.$pathEnd.length === 0) {
+            this.map.setEndPoint(cell);
+            this.form.controls.endX.setValue(cell[0]);
+            this.form.controls.endY.setValue(cell[1]);
+            this.drawEndPoint();
           }
+        } catch (e) {
+          alert(e);
         }
-        // remember this route as having no more untested options
-        Closed.push(myNode);
+
+        console.log(this.map.$pathStart);
+        console.log(this.map.$pathEnd);
       }
-    } // keep iterating until the Open list is empty
+    }, false);
 
-    return result;
-  }
-
-  /**
-   * Node function, returns a new object with Node properties used in the calculatePath public to store route costs, etc.
-   */
-  private Node(Parent?: IPoint, Point?: INode): IPoint {
-    return {
-      // pointer to another Node object
-      Parent,
-      // array index of this Node in the world linear array
-      value: Point.x + (Point.y * this.$gridMap.mapWidth),
-      // the location coordinates of this Node
-      x: Point.x,
-      y: Point.y,
-      // the heuristic estimated cost of an entire path using this node
-      f: 0,
-      // the distanceFunction cost to get from the starting point to this node
-      g: 0
-    };
-  }
-
-
-  /**
-   * Neighbours functions, used by findNeighbours public to locate adjacent available cells that aren't blocked
-   * Returns every available North, South, East or West cell that is empty.
-   * No diagonals, unless distanceFunction function is not Manhattan
-   */
-  private Neighbours(x, y): Array<IPoint> {
-    const N = y - 1;
-    const S = y + 1;
-    const E = x + 1;
-    const W = x - 1;
-    const myN = N > -1 && this.canWalkHere(x, N);
-    const myS = S < this.$gridMap.mapHeight && this.canWalkHere(x, S);
-    const myE = E < this.$gridMap.mapWidth && this.canWalkHere(E, y);
-    const myW = W > -1 && this.canWalkHere(W, y);
-    let result = [];
-
-    if (myN) {
-      result.push({x, y: N});
-    }
-    if (myE) {
-      result.push({x: E, y});
-    }
-    if (myS) {
-      result.push({x, y: S});
-    }
-    if (myW) {
-      result.push({x: W, y});
+    if (!this.canvas) {
+      throw new Error(`Your browser don't support Canvas!`);
     }
 
-    console.log(`this.heuristic ${this.$heuristic.constructor.name} ... ${this.$squeezing}`);
-
-    // new
-    switch (true) {
-      case this.$heuristic instanceof Manhattan:
-        // dummy
-        this.$findNeighbours = this.DiagonalNeighboursDummy;
-        break;
-      case this.$heuristic instanceof Diagonal:
-        if (this.$squeezing) {
-          // diagonals allowed but no $squeezing  through cracks:
-          this.$findNeighbours = this.DiagonalNeighbours;
-        } else {
-          // diagonals and $squeezing through cracks allowed:
-          this.$findNeighbours = this.DiagonalNeighboursFree;
-        }
-        break;
-      case this.$heuristic instanceof Euclidean:
-        if (this.$squeezing) {
-          // euclidean but no $squeezing through cracks:
-          this.$findNeighbours = this.DiagonalNeighbours;
-        } else {
-          // euclidean and $squeezing through cracks allowed:
-          this.$findNeighbours = this.DiagonalNeighboursFree;
-        }
-        break;
-      default:
-        //
-        break;
+    this.context = this.canvas.getContext('2d');
+    if (!this.context) {
+      throw new Error(`Your browser don't support Canvas context!`);
     }
-
-    result = this.$findNeighbours(myN, myS, myE, myW, N, S, E, W, result);
-    // new
-
-    return result;
-  }
-
-  private DiagonalNeighboursDummy(
-    myN: boolean,
-    myS: boolean,
-    myE: boolean,
-    myW: boolean,
-    N: number,
-    S: number,
-    E: number,
-    W: number,
-    result: Array<INode>
-  ): Array<INode> {
-    // empty
-    return result;
-  }
-
-  /**
-   * returns every available North East, South East, South West or North West cell including the times that
-   * you would be $squeezing through a "crack"
-   */
-  private DiagonalNeighboursFree(
-    myN: boolean,
-    myS: boolean,
-    myE: boolean,
-    myW: boolean,
-    N: number,
-    S: number,
-    E: number,
-    W: number,
-    result: Array<INode>
-  ): Array<INode> {
-    myN = N > -1;
-    myS = S < this.$gridMap.mapHeight;
-    myE = E < this.$gridMap.mapWidth;
-    myW = W > -1;
-    if (myE) {
-      if (myN && this.canWalkHere(E, N)) {
-        result.push({x: E, y: N});
-      }
-      if (myS && this.canWalkHere(E, S)) {
-        result.push({x: E, y: S});
-      }
-    }
-    if (myW) {
-      if (myN && this.canWalkHere(W, N)) {
-        result.push({x: W, y: N});
-      }
-      if (myS && this.canWalkHere(W, S)) {
-        result.push({x: W, y: S});
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Returns every available North East, South East, South West or North West cell
-   * no $squeezing through "cracks" between two diagonals
-   */
-  private DiagonalNeighbours(
-    myN: boolean,
-    myS: boolean,
-    myE: boolean,
-    myW: boolean,
-    N: number,
-    S: number,
-    E: number,
-    W: number,
-    result: Array<INode>
-  ): Array<INode> {
-    if (myN) {
-      if (myE && this.canWalkHere(E, N)) {
-        result.push({x: E, y: N});
-      }
-      if (myW && this.canWalkHere(W, N)) {
-        result.push({x: W, y: N});
-      }
-    }
-    if (myS) {
-      if (myE && this.canWalkHere(E, S)) {
-        result.push({x: E, y: S});
-      }
-      if (myW && this.canWalkHere(W, S)) {
-        result.push({x: W, y: S});
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * returns boolean value (world cell is available and open)
-   */
-  private canWalkHere(x, y): boolean {
-    return ((this.$gridMap.map[x] != null)
-      && (this.$gridMap.map[x][y] != null)
-      && (this.$gridMap.map[x][y] <= this.$gridMap.maxWalkableTileNum));
   }
 }
