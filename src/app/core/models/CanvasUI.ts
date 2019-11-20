@@ -122,6 +122,17 @@ export class CanvasUI {
             this.form.controls.endX.setValue(cell[0]);
             this.form.controls.endY.setValue(cell[1]);
             this.drawEndPoint();
+          } else {
+            this.drawEmptyGrid();
+            this.map.setStartPoint(this.map.$pathEnd);
+            this.form.controls.startX.setValue(this.map.$pathEnd[0]);
+            this.form.controls.startY.setValue(this.map.$pathEnd[1]);
+            this.drawStartPoint();
+
+            this.map.setEndPoint(cell);
+            this.form.controls.endX.setValue(cell[0]);
+            this.form.controls.endY.setValue(cell[1]);
+            this.drawEndPoint();
           }
         } catch (e) {
           alert(e);
