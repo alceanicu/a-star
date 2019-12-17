@@ -1,5 +1,4 @@
-import { IHeuristic } from '../../interfaces/heuristic.interface';
-import { INode } from '../../interfaces/node.interface';
+import { IHeuristic, INode } from '../../interfaces';
 
 export class Euclidean implements IHeuristic {
   compare(node: INode, goal: INode): number {

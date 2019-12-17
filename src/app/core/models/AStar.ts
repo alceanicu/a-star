@@ -1,10 +1,5 @@
-import { INode } from '../interfaces/node.interface';
-import { FindNeighbours } from '../interfaces/find-neighbours.interface';
-import { Diagonal } from './heuristic/diagonal.model';
-import { IHeuristic } from '../interfaces/heuristic.interface';
-import { Euclidean } from './heuristic/euclidean.model';
-import { Manhattan } from './heuristic/manhattan.model';
-import { IPoint } from '../interfaces/point.interface';
+import { INode, FindNeighbours, IHeuristic, IPoint } from '../interfaces';
+import { Diagonal, Euclidean, Manhattan } from './heuristic';
 import { GridMap } from './GridMap';
 
 export class AStar {
@@ -17,6 +12,7 @@ export class AStar {
     this.$gridMap = gridMap;
     this.$squeezing = squeezing;
     if (!this.$heuristic) {
+      // default
       this.setHeuristic(new Manhattan());
     }
   }

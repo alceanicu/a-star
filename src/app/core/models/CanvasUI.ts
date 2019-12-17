@@ -1,6 +1,6 @@
-import { GridMap } from './GridMap';
 import { ElementRef } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+import { GridMap } from './GridMap';
 
 export class CanvasUI {
   private map: GridMap;

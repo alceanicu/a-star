@@ -1,12 +1,9 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { GridMap } from './core/models/GridMap';
-import { CanvasUI } from './core/models/CanvasUI';
-import { HeuristicType } from './core/models/HeuristicType';
-import { AStar } from './core/models/AStar';
-import { Manhattan } from './core/models/heuristic/manhattan.model';
-import { Diagonal } from './core/models/heuristic/diagonal.model';
-import { Euclidean } from './core/models/heuristic/euclidean.model';
+import { AStar, CanvasUI, GridMap } from './core/models';
+import { HeuristicType } from './core/models/heuristic';
+import { HeuristicClass } from './core/models/heuristic/heuristicClass.model';
+import { IHeuristic } from './core/interfaces';
 
 @Component({
   selector: 'app-root',
@@ -14,8 +11,8 @@ import { Euclidean } from './core/models/heuristic/euclidean.model';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  public form: FormGroup;
   @ViewChild('canvasEl', {static: false}) public canvasEl: ElementRef;
+  public form: FormGroup;
   private map: GridMap;
   private ui: CanvasUI;
 
@@ -37,7 +34,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   get heuristicTypes() {
-    return Object.keys(HeuristicType);
+    return Object.values(HeuristicType);
   }
 
   get mapSizes() {
@@ -54,18 +51,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   public solveIt(): void {
     console.log('on solveIt');
     const aStar = new AStar(this.map, this.form.value.squeezing === '0');
-    const className = this.form.value.heuristic;
-
-    // FIXME
-    if (className === 'Manhattan') {
-      aStar.setHeuristic(new Manhattan());
-    }
-    if (className === 'Diagonal') {
-      aStar.setHeuristic(new Diagonal());
-    }
-    if (className === 'Euclidean') {
-      aStar.setHeuristic(new Euclidean());
-    }
+    aStar.setHeuristic(new HeuristicClass(this.form.value.heuristic) as IHeuristic);
 
     this.ui.drawEmptyGrid();
 
@@ -98,7 +84,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   private resetForm(): void {
-    this.form.controls.heuristic.setValue('Manhattan');
+    this.form.controls.heuristic.setValue(HeuristicType.MANHATTAN);
     this.form.controls.squeezing.setValue('0');
     this.form.controls.mapSize.setValue(16);
     this.resetFormPoints();
@@ -113,13 +99,13 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   private buildForm(): void {
     this.form = this.formBuilder.group({
-      heuristic: ['Manhattan', Validators.required],
+      heuristic: [HeuristicType.MANHATTAN, Validators.required],
       squeezing: ['0', Validators.required],
       mapSize: [16, Validators.required],
       startX: ['', Validators.required],
       startY: ['', Validators.required],
       endX: ['', Validators.required],
-      endY: ['', Validators.required],
+      endY: ['', Validators.required]
     });
   }
 }
