@@ -1,9 +1,9 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AStar, CanvasUI, GridMap } from './core/models';
+import { IHeuristic, INode } from './core/interfaces';
+import { AStar, UI, Map } from './core/models';
 import { HeuristicType } from './core/models/heuristic';
 import { HeuristicClass } from './core/models/heuristic/heuristicClass.model';
-import { IHeuristic } from './core/interfaces';
 
 @Component({
   selector: 'app-root',
@@ -13,24 +13,24 @@ import { IHeuristic } from './core/interfaces';
 export class AppComponent implements OnInit, AfterViewInit {
   @ViewChild('canvasEl', {static: false}) public canvasEl: ElementRef;
   public form: FormGroup;
-  private map: GridMap;
-  private ui: CanvasUI;
+  private $map: Map;
+  private $ui: UI;
 
   public constructor(
-    public formBuilder: FormBuilder,
+    public formBuilder: FormBuilder
   ) {
   }
 
   public ngOnInit(): void {
     console.log('on ngOnInit');
     this.buildForm();
-    this.map = new GridMap();
+    this.$map = new Map();
   }
 
   public ngAfterViewInit(): void {
     console.log('on ngAfterViewInit');
-    this.ui = new CanvasUI(this.map, this.canvasEl, this.form);
-    this.ui.drawEmptyGrid();
+    this.$ui = new UI(this.$map, this.canvasEl, this.form);
+    this.$ui.drawEmptyGrid();
   }
 
   get heuristicTypes() {
@@ -44,43 +44,45 @@ export class AppComponent implements OnInit, AfterViewInit {
   public changeMapSize(): void {
     console.log('on changeMapSize');
     console.log(this.form.value.mapSize);
-    this.map = new GridMap(this.form.value.mapSize, this.form.value.mapSize);
-    this.ui.drawEmptyGrid(this.map);
+    this.$map = new Map(this.form.value.mapSize);
+    this.$ui.drawEmptyGrid(this.$map);
   }
 
   public solveIt(): void {
     console.log('on solveIt');
-    const aStar = new AStar(this.map, this.form.value.squeezing === '0');
+    const aStar = new AStar(this.$map, this.$ui, this.form.value.squeezing === '0');
     aStar.setHeuristic(new HeuristicClass(this.form.value.heuristic) as IHeuristic);
 
-    this.ui.drawEmptyGrid();
-
     try {
-      this.map.setPoints(
-        [Number(this.form.value.startX), Number(this.form.value.startY)],
-        [Number(this.form.value.endX), Number(this.form.value.endY)]
-      );
+      if ((this.$map.startPoint === null) || (this.$map.endPoint === null)) {
+        this.$map.setPoints(
+          {x: Number(this.form.value.startX), y: Number(this.form.value.startY)} as INode,
+          {x: Number(this.form.value.endX), y: Number(this.form.value.endY)} as INode
+        );
+      }
+
+      aStar.findPath()
+        .then(path => {
+          this.$map.currentPath = path;
+          this.$ui.drawCurrentPath();
+        });
     } catch (e) {
       alert(e);
+      console.error(e);
       return;
     }
-
-    this.map.currentPath = aStar.findPath();
-    console.log(this.map.currentPath);
-
-    this.ui.drawCurrentPath();
   }
 
   public clearMap(): void {
     this.resetFormPoints();
-    this.map.resetGrid();
-    this.ui.drawEmptyGrid();
+    this.$map.resetGrid();
+    this.$ui.drawEmptyGrid();
   }
 
   public resetGrid(): void {
     this.resetForm();
-    this.map = new GridMap();
-    this.ui.drawEmptyGrid(this.map);
+    this.$map = new Map();
+    this.$ui.drawEmptyGrid(this.$map);
   }
 
   private resetForm(): void {

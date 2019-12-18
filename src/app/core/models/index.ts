@@ -1,3 +1,3 @@
 export * from './AStar';
-export * from './CanvasUI';
-export * from './GridMap';
+export * from './Map';
+export * from './UI';

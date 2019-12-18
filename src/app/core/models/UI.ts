@@ -1,15 +1,16 @@
 import { ElementRef } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { GridMap } from './GridMap';
+import { Map } from './Map';
+import { INode } from '../interfaces';
 
-export class CanvasUI {
-  private map: GridMap;
+export class UI {
+  private map: Map;
   private canvasEl: ElementRef;
   private readonly form?: FormGroup;
   private readonly canvas?: HTMLCanvasElement;
   private context?: CanvasRenderingContext2D;
 
-  public constructor(map: GridMap, canvasEl: ElementRef, form: FormGroup = null) {
+  public constructor(map: Map, canvasEl: ElementRef, form: FormGroup = null) {
     this.map = map;
     this.canvasEl = canvasEl;
     this.form = form;
@@ -17,7 +18,7 @@ export class CanvasUI {
     this.init();
   }
 
-  public drawEmptyGrid(map: GridMap = null): void {
+  public drawEmptyGrid(map: Map = null): void {
     console.log('drawEmptyGrid...');
 
     if (map !== null) {
@@ -32,36 +33,45 @@ export class CanvasUI {
 
     for (let x = 0; x < this.map.mapWidth; x++) {
       for (let y = 0; y < this.map.mapHeight; y++) {
-        this.context.fillStyle = (this.map.map[x][y] === 1) ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-        this.context.fillRect(
-          x * this.map.cellWidth,
-          y * this.map.cellHeight,
-          this.map.cellWidth - 1,
-          this.map.cellHeight - 1
-        );
+        const color = (this.map.map[x][y] === 1) ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+        this.drawCell({x, y} as INode, color);
       }
     }
   }
 
-  public drawStartPoint(): void {
-    this.context.font = 'bold 10px Arial';
-    this.context.textAlign = 'center';
-    this.context.fillStyle = '#F00';
-    this.context.fillText(
-      'START',
-      (this.map.$pathStart[0] * this.map.cellWidth) + (this.map.cellWidth / 2),
-      this.map.$pathStart[1] * this.map.cellHeight + ((this.map.cellHeight / 2) + (10 / 2))
+  public drawCell(node: INode, color: string = 'rgba(0, 0, 0, 0.9)'): void {
+    this.context.fillStyle = color;
+    this.context.fillRect(
+      node.x * this.map.cellWidth,
+      node.y * this.map.cellHeight,
+      this.map.cellWidth - 1,
+      this.map.cellHeight - 1
     );
   }
 
-  public drawEndPoint(): void {
-    this.context.font = 'bold 10px Arial';
-    this.context.fillStyle = '#000';
+  private drawPoint(
+    cell: INode,
+    text: string,
+    fillStyle: string = '#F00',
+    font: string = 'bold 10px Arial',
+    textAlign: CanvasTextAlign = 'center'
+  ): void {
+    this.context.font = font;
+    this.context.textAlign = textAlign;
+    this.context.fillStyle = fillStyle;
     this.context.fillText(
-      'END',
-      (this.map.$pathEnd[0] * this.map.cellWidth) + (this.map.cellWidth / 2),
-      this.map.$pathEnd[1] * this.map.cellHeight + ((this.map.cellHeight / 2) + (10 / 2))
+      text,
+      (cell.x * this.map.cellWidth) + (this.map.cellWidth / 2),
+      (cell.y * this.map.cellHeight) + ((this.map.cellHeight / 2) + (10 / 2))
     );
+  }
+
+  public drawStartPoint(): void {
+    this.drawPoint(this.map.startPoint, 'START');
+  }
+
+  public drawEndPoint(): void {
+    this.drawPoint(this.map.endPoint, 'END', '#000');
   }
 
   public drawCurrentPath(): void {
@@ -89,7 +99,9 @@ export class CanvasUI {
   private init(): void {
     this.canvas.width = this.map.mapWidth * this.map.cellWidth;
     this.canvas.height = this.map.mapHeight * this.map.cellHeight;
+
     this.canvas.addEventListener('click', (e) => {
+      console.log('addEventListener');
       let x;
       let y;
       // grab html page coords
@@ -106,40 +118,44 @@ export class CanvasUI {
       y -= this.canvas.offsetTop;
 
       // return cell [x, y] that we clicked
-      const cell = [Math.floor(x / this.map.cellWidth), Math.floor(y / this.map.cellHeight)];
+      const cell = {x: Math.floor(x / this.map.cellWidth), y: Math.floor(y / this.map.cellHeight)} as INode;
 
       // now we know while tile we clicked
-      console.log(`We clicked ON [x=${cell[0]} y=${cell[1]}]`);
+      console.log(`We clicked ON [x=${cell.x} y=${cell.y}]`);
+
       if (this.form !== null) {
         try {
-          if (this.map.$pathStart.length === 0) {
+          if (this.map.startPoint === null) {
             this.map.setStartPoint(cell);
-            this.form.controls.startX.setValue(cell[0]);
-            this.form.controls.startY.setValue(cell[1]);
+            this.form.controls.startX.setValue(cell.x);
+            this.form.controls.startY.setValue(cell.y);
             this.drawStartPoint();
-          } else if (this.map.$pathEnd.length === 0) {
-            this.map.setEndPoint(cell);
-            this.form.controls.endX.setValue(cell[0]);
-            this.form.controls.endY.setValue(cell[1]);
-            this.drawEndPoint();
-          } else {
+          } else if (this.map.endPoint === null) {
+            if (this.compare(this.map.startPoint, cell)) {
+            // if ((this.map.startPoint.x === cell.x) && (this.map.startPoint.y === cell.y)) {
+              throw new Error('Chose a different point for end');
+            } else {
+              this.map.setEndPoint(cell);
+              this.form.controls.endX.setValue(cell.x);
+              this.form.controls.endY.setValue(cell.y);
+              this.drawEndPoint();
+            }
+          } else { // change with a new end point
             this.drawEmptyGrid();
-            this.map.setStartPoint(this.map.$pathEnd);
-            this.form.controls.startX.setValue(this.map.$pathEnd[0]);
-            this.form.controls.startY.setValue(this.map.$pathEnd[1]);
+            this.map.setStartPoint(this.map.endPoint);
+            this.form.controls.startX.setValue(this.map.endPoint.x);
+            this.form.controls.startY.setValue(this.map.endPoint.y);
             this.drawStartPoint();
 
             this.map.setEndPoint(cell);
-            this.form.controls.endX.setValue(cell[0]);
-            this.form.controls.endY.setValue(cell[1]);
+            this.form.controls.endX.setValue(cell.x);
+            this.form.controls.endY.setValue(cell.y);
             this.drawEndPoint();
           }
         } catch (e) {
+          console.log(e);
           alert(e);
         }
-
-        console.log(this.map.$pathStart);
-        console.log(this.map.$pathEnd);
       }
     }, false);
 
@@ -151,5 +167,9 @@ export class CanvasUI {
     if (!this.context) {
       throw new Error(`Your browser don't support Canvas context!`);
     }
+  }
+
+  public compare(node: INode, xNode: INode): boolean {
+    return (node.x === xNode.x) && (node.y === xNode.y);
   }
 }

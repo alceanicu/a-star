@@ -1,46 +1,47 @@
 import { INode, FindNeighbours, IHeuristic, IPoint } from '../interfaces';
 import { Diagonal, Euclidean, Manhattan } from './heuristic';
-import { GridMap } from './GridMap';
+import { Map, UI } from './';
 
 export class AStar {
-  private $gridMap: GridMap;
+  private $map: Map;
+  private $ui: UI;
+  private readonly $squeezing: boolean;
   private $findNeighbours: FindNeighbours;
   private $heuristic: IHeuristic;
-  private $squeezing: boolean;
+  private $uiTimeOut: number;
 
-  public constructor(gridMap: GridMap, squeezing: boolean = false) {
-    this.$gridMap = gridMap;
+  public constructor(map: Map, ui: UI, squeezing: boolean = false, uiTimeOut: number = 300) {
+    this.$map = map;
+    this.$ui = ui;
     this.$squeezing = squeezing;
-    if (!this.$heuristic) {
-      // default
-      this.setHeuristic(new Manhattan());
-    }
+    this.$uiTimeOut = uiTimeOut;
+    this.setHeuristic(new Manhattan());
   }
 
   public setHeuristic(heuristic: IHeuristic): void {
     this.$heuristic = heuristic;
   }
 
-  public findPath(): Array<INode> {
+  public async findPath(): Promise<Array<INode>> {
     // actually calculate the a-star path!
     // this returns an array of coordinates
     // that is empty if no path is possible
     // create Nodes from the Start and End x,y coordinates
-    const myPathStart = this.Node(null, {x: this.$gridMap.$pathStart[0], y: this.$gridMap.$pathStart[1]});
-    const myPathEnd = this.Node(null, {x: this.$gridMap.$pathEnd[0], y: this.$gridMap.$pathEnd[1]});
+    const startPoint = this.Node(null, {x: this.$map.startPoint.x, y: this.$map.startPoint.y});
+    const endPoint = this.Node(null, {x: this.$map.endPoint.x, y: this.$map.endPoint.y});
     // create an array that will contain all world cells
     // tslint:disable-next-line:no-shadowed-variable
-    let AStar = new Array(this.$gridMap.mapSize);
+    let AStar = new Array(this.$map.mapSize);
     // list of currently open Nodes
-    let Open = [myPathStart];
+    let Open = [startPoint];
     // list of closed Nodes
     let Closed = [];
     // list of the final output array
     const result = [];
     // reference to a Node (that is nearby)
-    let myNeighbours;
+    let currentNodeNeighbours;
     // reference to a Node (that we are considering now)
-    let myNode;
+    let currentNode;
     // reference to a Node (that starts a path in question)
     let myPath;
     // temp integer variables used in the calculations
@@ -52,7 +53,7 @@ export class AStar {
     // iterate through the open list until none are left
     // tslint:disable-next-line:no-conditional-assignment
     while (length = Open.length) {
-      max = this.$gridMap.mapSize;
+      max = this.$map.mapSize;
       min = -1;
       for (i = 0; i < length; i++) {
         if (Open[i].f < max) {
@@ -61,11 +62,11 @@ export class AStar {
         }
       }
       // grab the next node and remove it from Open array
-      myNode = Open.splice(min, 1)[0];
+      currentNode = Open.splice(min, 1)[0];
 
       // is it the destination node?
-      if (myNode.value === myPathEnd.value) {
-        myPath = Closed[Closed.push(myNode) - 1];
+      if (currentNode.value === endPoint.value) {
+        myPath = Closed[Closed.push(currentNode) - 1];
         do {
           result.push([myPath.x, myPath.y]);
         }
@@ -77,27 +78,48 @@ export class AStar {
         result.reverse();
       } else {
         // not the destination - find which nearby nodes are walkable
-        myNeighbours = this.getNeighbours(myNode.x, myNode.y);
+        currentNodeNeighbours = this.getNeighbours(currentNode.x, currentNode.y);
         // test each one that hasn't been tried already
-        for (i = 0, j = myNeighbours.length; i < j; i++) {
-          myPath = this.Node(myNode, myNeighbours[i]);
+        for (i = 0, j = currentNodeNeighbours.length; i < j; i++) {
+
+          const promise = new Promise((resolve, reject) => {
+            setTimeout(() => {
+              resolve(this.Node(currentNode, currentNodeNeighbours[i]));
+            }, this.$uiTimeOut);
+          });
+
+          // wait until the promise returns us a value
+          myPath = await promise;
+          // myPath = this.Node(currentNode, currentNodeNeighbours[i]);
           if (!AStar[myPath.value]) {
             // estimated cost of this particular route so far
-            myPath.g = myNode.g + this.$heuristic.compare(myNeighbours[i], myNode);
+            myPath.g = currentNode.g + this.$heuristic.compare(currentNodeNeighbours[i], currentNode);
             // estimated cost of entire guessed route to the destination
-            myPath.f = myPath.g + this.$heuristic.compare(myNeighbours[i], myPathEnd);
+            myPath.f = myPath.g + this.$heuristic.compare(currentNodeNeighbours[i], endPoint);
             // remember this new path for testing above
             Open.push(myPath);
             // mark this node in the world graph as visited
             AStar[myPath.value] = true;
+
+            // check if it is NOT start or end point
+            if (this.$ui.compare(currentNodeNeighbours[i], this.$map.startPoint) ||
+              this.$ui.compare(currentNodeNeighbours[i], this.$map.endPoint)) {
+              // start || end
+            } else {
+              this.$ui.drawCell(currentNodeNeighbours[i], 'rgba(0, 255, 0, 0.3)');
+            }
           }
         }
         // remember this route as having no more untested options
-        Closed.push(myNode);
+        Closed.push(currentNode);
+        this.$ui.drawCell(currentNode, 'rgba(0, 155, 255, 0.3)');
       }
     } // keep iterating until the Open list is empty
 
-    return result;
+    // return result;
+    return new Promise((resolve, reject) => {
+      resolve(result);
+    });
   }
 
   /**
@@ -108,7 +130,7 @@ export class AStar {
       // pointer to another Node object
       Parent,
       // array index of this Node in the world linear array
-      value: Point.x + (Point.y * this.$gridMap.mapWidth),
+      value: Point.x + (Point.y * this.$map.mapWidth),
       // the location coordinates of this Node
       x: Point.x,
       y: Point.y,
@@ -131,8 +153,8 @@ export class AStar {
     const E = x + 1;
     const W = x - 1;
     const myN = N > -1 && this.canWalkHere(x, N);
-    const myS = S < this.$gridMap.mapHeight && this.canWalkHere(x, S);
-    const myE = E < this.$gridMap.mapWidth && this.canWalkHere(E, y);
+    const myS = S < this.$map.mapHeight && this.canWalkHere(x, S);
+    const myE = E < this.$map.mapWidth && this.canWalkHere(E, y);
     const myW = W > -1 && this.canWalkHere(W, y);
     let result = [];
 
@@ -176,7 +198,8 @@ export class AStar {
         }
         break;
       default:
-        //
+        // dummy
+        // this.$findNeighbours = this.DiagonalNeighboursDummy;
         break;
     }
 
@@ -217,8 +240,8 @@ export class AStar {
     result: Array<INode>
   ): Array<INode> {
     myN = N > -1;
-    myS = S < this.$gridMap.mapHeight;
-    myE = E < this.$gridMap.mapWidth;
+    myS = S < this.$map.mapHeight;
+    myE = E < this.$map.mapWidth;
     myW = W > -1;
     if (myE) {
       if (myN && this.canWalkHere(E, N)) {
@@ -279,8 +302,8 @@ export class AStar {
    * returns boolean value (world cell is available and open)
    */
   private canWalkHere(x, y): boolean {
-    return ((this.$gridMap.map[x] != null)
-      && (this.$gridMap.map[x][y] != null)
-      && (this.$gridMap.map[x][y] <= this.$gridMap.maxWalkableTileNum));
+    return ((this.$map.map[x] != null)
+      && (this.$map.map[x][y] != null)
+      && (this.$map.map[x][y] <= this.$map.maxWalkableTileNum));
   }
 }
