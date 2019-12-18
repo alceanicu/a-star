@@ -19,8 +19,6 @@ export class UI {
   }
 
   public drawEmptyGrid(map: Map = null): void {
-    console.log('drawEmptyGrid...');
-
     if (map !== null) {
       this.map = map;
       this.canvas.width = this.map.mapWidth * this.map.cellWidth;
@@ -101,7 +99,6 @@ export class UI {
     this.canvas.height = this.map.mapHeight * this.map.cellHeight;
 
     this.canvas.addEventListener('click', (e) => {
-      console.log('addEventListener');
       let x;
       let y;
       // grab html page coords
@@ -119,9 +116,6 @@ export class UI {
 
       // return cell [x, y] that we clicked
       const cell = {x: Math.floor(x / this.map.cellWidth), y: Math.floor(y / this.map.cellHeight)} as INode;
-
-      // now we know while tile we clicked
-      console.log(`We clicked ON [x=${cell.x} y=${cell.y}]`);
 
       if (this.form !== null) {
         try {
@@ -153,7 +147,7 @@ export class UI {
             this.drawEndPoint();
           }
         } catch (e) {
-          console.log(e);
+          console.error(e);
           alert(e);
         }
       }

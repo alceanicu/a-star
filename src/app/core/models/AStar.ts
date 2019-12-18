@@ -171,8 +171,6 @@ export class AStar {
       result.push({x: W, y});
     }
 
-    console.log(`this.heuristic ${this.$heuristic.constructor.name} ... ${this.$squeezing}`);
-
     // new
     switch (true) {
       case this.$heuristic instanceof Manhattan:

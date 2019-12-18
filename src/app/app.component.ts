@@ -22,13 +22,11 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   public ngOnInit(): void {
-    console.log('on ngOnInit');
     this.buildForm();
     this.$map = new Map();
   }
 
   public ngAfterViewInit(): void {
-    console.log('on ngAfterViewInit');
     this.$ui = new UI(this.$map, this.canvasEl, this.form);
     this.$ui.drawEmptyGrid();
   }
@@ -42,14 +40,11 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   public changeMapSize(): void {
-    console.log('on changeMapSize');
-    console.log(this.form.value.mapSize);
     this.$map = new Map(this.form.value.mapSize);
     this.$ui.drawEmptyGrid(this.$map);
   }
 
   public solveIt(): void {
-    console.log('on solveIt');
     const aStar = new AStar(this.$map, this.$ui, this.form.value.squeezing === '0');
     aStar.setHeuristic(new HeuristicClass(this.form.value.heuristic) as IHeuristic);
 
