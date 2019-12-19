@@ -10,7 +10,7 @@ export class AStar {
   private $heuristic: IHeuristic;
   private $uiTimeOut: number;
 
-  public constructor(map: Map, ui: UI, squeezing: boolean = false, uiTimeOut: number = 300) {
+  public constructor(map: Map, ui: UI, squeezing: boolean = false, uiTimeOut: number = 50) {
     this.$map = map;
     this.$ui = ui;
     this.$squeezing = squeezing;

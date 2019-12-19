@@ -40,11 +40,17 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   public changeMapSize(): void {
-    this.$map = new Map(this.form.value.mapSize);
-    this.$ui.drawEmptyGrid(this.$map);
+    if (!this.$ui.isRunning) {
+      this.$map = new Map(this.form.value.mapSize);
+      this.$ui.drawEmptyGrid(this.$map);
+    }
   }
 
   public solveIt(): void {
+    if (this.$ui.isRunning ) {
+      return;
+    }
+    this.$ui.isRunning = true;
     const aStar = new AStar(this.$map, this.$ui, this.form.value.squeezing === '0');
     aStar.setHeuristic(new HeuristicClass(this.form.value.heuristic) as IHeuristic);
 
@@ -60,7 +66,8 @@ export class AppComponent implements OnInit, AfterViewInit {
         .then(path => {
           this.$map.currentPath = path;
           this.$ui.drawCurrentPath();
-        });
+        })
+        .finally(() => this.$ui.isRunning = false);
     } catch (e) {
       alert(e);
       console.error(e);
@@ -69,12 +76,18 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   public clearMap(): void {
+    if (this.$ui.isRunning) {
+      return;
+    }
     this.resetFormPoints();
     this.$map.resetGrid();
     this.$ui.drawEmptyGrid();
   }
 
   public resetGrid(): void {
+    if (this.$ui.isRunning) {
+      return;
+    }
     this.resetForm();
     this.$map = new Map();
     this.$ui.drawEmptyGrid(this.$map);

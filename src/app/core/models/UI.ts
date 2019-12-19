@@ -9,6 +9,7 @@ export class UI {
   private readonly form?: FormGroup;
   private readonly canvas?: HTMLCanvasElement;
   private context?: CanvasRenderingContext2D;
+  public isRunning = false;
 
   public constructor(map: Map, canvasEl: ElementRef, form: FormGroup = null) {
     this.map = map;
@@ -99,6 +100,9 @@ export class UI {
     this.canvas.height = this.map.mapHeight * this.map.cellHeight;
 
     this.canvas.addEventListener('click', (e) => {
+      if (this.isRunning) {
+        return;
+      }
       let x;
       let y;
       // grab html page coords
