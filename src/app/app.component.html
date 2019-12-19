@@ -1,107 +1,104 @@
-<div>
-  <form [formGroup]="form" (submit)="solveIt()">
+<form [formGroup]="form" (submit)="solveIt()" class="form" style="width: 100%">
 
-    <div class="card">
-      <div class="card-header">
+  <div class="form-row">
 
-        <div class="row">
-          <div class="form-group col-1">
-            <label for="heuristic">#Heuristic </label>
-            <select class="form-control" id="heuristic" formControlName="heuristic">
-              <option *ngFor="let heuristicClass of heuristicTypes"
-                      [ngValue]="heuristicClass">{{heuristicClass}}</option>
-            </select>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="squeezing">#Squeezing </label>
-            <select class="form-control" id="squeezing" formControlName="squeezing">
-              <option value="0">FALSE</option>
-              <option value="1">TRUE</option>
-            </select>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="mapSize">Map Size </label>
-            <select class="form-control" id="mapSize" (change)="changeMapSize()" formControlName="mapSize">
-              <option *ngFor="let size of mapSizes" [ngValue]="size">{{size}} X {{size}}</option>
-            </select>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="startX">Start x:</label>
-            <div class="input-group mb-2">
-              <div class="input-group-prepend">
-                <div class="input-group-text">X:</div>
-              </div>
-              <input type="text" class="form-control" id="startX" formControlName="startX" placeholder="X">
-            </div>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="startY">Start y:</label>
-            <div class="input-group mb-2">
-              <div class="input-group-prepend">
-                <div class="input-group-text">Y:</div>
-              </div>
-              <input type="text" class="form-control" id="startY" formControlName="startY" placeholder="Y">
-            </div>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="endX">End x:</label>
-            <div class="input-group mb-2">
-              <div class="input-group-prepend">
-                <div class="input-group-text">X:</div>
-              </div>
-              <input type="text" class="form-control" id="endX" formControlName="endX" placeholder="X">
-            </div>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="endY">End y:</label>
-            <div class="input-group mb-2">
-              <div class="input-group-prepend">
-                <div class="input-group-text">Y:</div>
-              </div>
-              <input type="text" class="form-control" id="endY" formControlName="endY" placeholder="Y">
-            </div>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="btn1"></label>
-            <div class="input-group mb-2">
-              <button type="submit" id="btn1" class="btn btn-success m-1"
-                      [disabled]="!form.valid"><i class="fa fa-floppy-o" aria-hidden="true"></i> Solve it
-              </button>
-            </div>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="btn2"></label>
-            <div class="input-group mb-2">
-              <button type='button' class="btn btn-danger m-1" id="btn2"
-                      (click)='resetGrid()'>Reset
-              </button>
-            </div>
-          </div>
-
-          <div class="form-group col-1">
-            <label for="btn3"></label>
-            <div class="input-group mb-2">
-              <button type='button' class="btn btn-warning m-1" id="btn3"
-                      (click)='clearMap()'>Clear Map
-              </button>
-            </div>
-          </div>
-
+    <div class="form-group col-md-4 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-success">#Heuristic</div>
         </div>
-
+        <select class="form-control form-control-sm" id="heuristic"
+                formControlName="heuristic">
+          <option *ngFor="let heuristicClass of heuristicTypes"
+                  [ngValue]="heuristicClass">{{heuristicClass}}</option>
+        </select>
       </div>
     </div>
 
-  </form>
-</div>
+    <div class="form-group col-md-4 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-success">#Squeezing</div>
+        </div>
+        <select class="form-control form-control-sm" id="squeezing"
+                formControlName="squeezing">
+          <option value="0">FALSE</option>
+          <option value="1">TRUE</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group col-md-4 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-success">#Map Size</div>
+        </div>
+        <select class="form-control form-control-sm" id="mapSize" (change)="changeMapSize()"
+                formControlName="mapSize">
+          <option *ngFor="let size of mapSizes" [ngValue]="size">{{size}} X {{size}}</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="form-row">
+
+    <div class="form-group col-md-3 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-warning">Start X:</div>
+        </div>
+        <input type="text" class="form-control form-control-sm" id="startX"
+               formControlName="startX" placeholder="X">
+      </div>
+    </div>
+
+    <div class="form-group col-md-3 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-warning">Start Y:</div>
+        </div>
+        <input type="text" class="form-control form-control-sm" id="startY"
+               formControlName="startY" placeholder="Y">
+      </div>
+    </div>
+
+    <div class="form-group col-md-3 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-warning">End X:</div>
+        </div>
+        <input type="text" class="form-control form-control-sm" id="endX"
+               formControlName="endX" placeholder="X">
+      </div>
+    </div>
+
+    <div class="form-group col-md-3 col-sm-6">
+      <div class="input-group input-group-sm mb-2">
+        <div class="input-group-prepend">
+          <div class="input-group-text bg-warning">End Y:</div>
+        </div>
+        <input type="text" class="form-control form-control-sm" id="endY"
+               formControlName="endY" placeholder="Y">
+      </div>
+    </div>
+
+  </div>
+
+  <button type="submit" class="btn btn-success btn-sm m-1" id="btn1"
+          [disabled]="!form.valid">Solve it
+  </button>
+
+  <button type='button' class="btn btn-danger btn-sm m-1" id="btn2"
+          (click)='resetGrid()'>Reset
+  </button>
+
+  <button type='button' class="btn btn-warning btn-sm m-1" id="btn3"
+          (click)='clearMap()'>Clear Map
+  </button>
+
+</form>
 
 <div class="d-flex justify-content-center">
   <canvas #canvasEl id="gameCanvas"></canvas>
