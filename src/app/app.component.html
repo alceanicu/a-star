@@ -1,105 +1,73 @@
-<form [formGroup]="form" (submit)="solveIt()" class="form" style="width: 100%">
+<form [formGroup]="form" (submit)="solveIt()">
 
-  <div class="form-row">
+  <mat-card>
+    <mat-card-content fxLayout="row" fxLayout.xs="column" fxLayoutAlign="space-evenly stretch">
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>#Heuristic</mat-label>
+        <mat-select formControlName="heuristic">
+          <mat-option *ngFor="let heuristicClass of heuristicTypes"
+                      [value]="heuristicClass">{{heuristicClass}}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <div class="form-group col-md-4 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-success">#Heuristic</div>
-        </div>
-        <select class="form-control form-control-sm" id="heuristic"
-                formControlName="heuristic">
-          <option *ngFor="let heuristicClass of heuristicTypes"
-                  [ngValue]="heuristicClass">{{heuristicClass}}</option>
-        </select>
-      </div>
-    </div>
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>#Squeezing</mat-label>
+        <mat-select formControlName="squeezing">
+          <mat-option value="0">FALSE</mat-option>
+          <mat-option value="1">TRUE</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <div class="form-group col-md-4 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-success">#Squeezing</div>
-        </div>
-        <select class="form-control form-control-sm" id="squeezing"
-                formControlName="squeezing">
-          <option value="0">FALSE</option>
-          <option value="1">TRUE</option>
-        </select>
-      </div>
-    </div>
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>#Map Size</mat-label>
+        <mat-select formControlName="mapSize"
+                    (selectionChange)="changeMapSize()">
+          <mat-option *ngFor="let size of mapSizes"
+                      [value]="size">{{size}} X {{size}}</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <div class="form-group col-md-4 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-success">#Map Size</div>
-        </div>
-        <select class="form-control form-control-sm" id="mapSize" (change)="changeMapSize()"
-                formControlName="mapSize">
-          <option *ngFor="let size of mapSizes" [ngValue]="size">{{size}} X {{size}}</option>
-        </select>
-      </div>
-    </div>
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>Start X:</mat-label>
+        <input matInput formControlName="startX" placeholder="X"/>
+      </mat-form-field>
 
-  </div>
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>Start Y:</mat-label>
+        <input matInput formControlName="startY" placeholder="Y"/>
+      </mat-form-field>
 
-  <div class="form-row">
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>End X:</mat-label>
+        <input matInput formControlName="endX" placeholder="X"/>
+      </mat-form-field>
 
-    <div class="form-group col-md-3 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-warning">Start X:</div>
-        </div>
-        <input type="text" class="form-control form-control-sm" id="startX"
-               formControlName="startX" placeholder="X">
-      </div>
-    </div>
+      <mat-form-field fxFlex="10" fxFlex.xs="90">
+        <mat-label>End Y:</mat-label>
+        <input matInput formControlName="endY" placeholder="Y"/>
+      </mat-form-field>
 
-    <div class="form-group col-md-3 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-warning">Start Y:</div>
-        </div>
-        <input type="text" class="form-control form-control-sm" id="startY"
-               formControlName="startY" placeholder="Y">
-      </div>
-    </div>
+    </mat-card-content>
+  </mat-card>
 
-    <div class="form-group col-md-3 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-warning">End X:</div>
-        </div>
-        <input type="text" class="form-control form-control-sm" id="endX"
-               formControlName="endX" placeholder="X">
-      </div>
-    </div>
+  <mat-card>
+    <mat-card-content fxLayout="row wrap" fxLayout.xs="column" fxLayoutAlign="space-evenly center" fxLayoutGap="5%">
+      <button mat-raised-button type="submit" color="warn"
+              fxFlex="30"
+              [disabled]="!form.valid">Solve it
+      </button>
 
-    <div class="form-group col-md-3 col-sm-6">
-      <div class="input-group input-group-sm mb-2">
-        <div class="input-group-prepend">
-          <div class="input-group-text bg-warning">End Y:</div>
-        </div>
-        <input type="text" class="form-control form-control-sm" id="endY"
-               formControlName="endY" placeholder="Y">
-      </div>
-    </div>
+      <button mat-raised-button type='button' color="primary"
+              fxFlex="30"
+              (click)='resetGrid()'>Reset
+      </button>
 
-  </div>
-
-  <button type="submit" class="btn btn-success btn-sm m-1" id="btn1"
-          [disabled]="!form.valid">Solve it
-  </button>
-
-  <button type='button' class="btn btn-danger btn-sm m-1" id="btn2"
-          (click)='resetGrid()'>Reset
-  </button>
-
-  <button type='button' class="btn btn-warning btn-sm m-1" id="btn3"
-          (click)='clearMap()'>Clear Map
-  </button>
-
+      <button mat-raised-button type='button' color="accent"
+              fxFlex="30"
+              (click)='clearMap()'>Clear Map
+      </button>
+    </mat-card-content>
+  </mat-card>
 </form>
 
-<div class="d-flex justify-content-center">
-  <canvas #canvasEl id="gameCanvas"></canvas>
-</div>
+<canvas #canvasEl id="gameCanvas"></canvas>

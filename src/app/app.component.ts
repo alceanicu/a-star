@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
 import { IHeuristic, INode } from './core/interfaces';
 import { AStar, UI, Map } from './core/models';
 import { HeuristicType } from './core/models/heuristic';
@@ -11,7 +12,7 @@ import { HeuristicClass } from './core/models/heuristic/heuristicClass.model';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit, AfterViewInit {
-  @ViewChild('canvasEl', {static: false}) public canvasEl: ElementRef;
+  @ViewChild('canvasEl') public canvasEl: ElementRef;
   public form: FormGroup;
   private $map: Map;
   private $ui: UI;
